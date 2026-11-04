@@ -38,22 +38,22 @@ namespace rental
         ~MaintenanceRecord();
 
         // Геттеры (получение значений)
-        [[nodiscard]] std::uint64_t GetId() const
+        [[nodiscard]] std::uint64_t GetId()
         {
             return m_id;
         }
 
-        [[nodiscard]] std::string_view GetDescription() const
+        [[nodiscard]] std::string_view GetDescription()
         {
             return m_workDescription;
         }
 
-        [[nodiscard]] double GetCost() const
+        [[nodiscard]] double GetCost()
         {
             return m_cost;
         }
 
-        [[nodiscard]] std::int64_t GetDate() const
+        [[nodiscard]] std::int64_t GetDate()
         {
             return m_dateTimestamp;
         }
