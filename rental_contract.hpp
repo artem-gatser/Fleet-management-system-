@@ -1,13 +1,14 @@
 #pragma once
-
 #include "vehicle.hpp"
 #include <cstdint>
 #include <string>
 #include <string_view>
+#include <memory>
 
 namespace rental
 {
 
+    // Класс состояния договора
     enum class ContractState
     {
         eActive,
@@ -28,12 +29,13 @@ namespace rental
         double m_totalCost{ 0.0 };
         ContractState m_state{ ContractState::eActive };
 
-        // АГРЕГАЦИЯ: Указатель на сторонний объект Vehicle (автомобиль не принадлежит договору)
-        Vehicle* m_targetVehicle{ nullptr };
+        // АГРЕГАЦИЯ: Наблюдатель за автомобилем через std::weak_ptr
+        std::weak_ptr<Vehicle> m_targetVehicle{};
 
     public:
+        // Конструктор принимает shared_ptr на автомобиль, который передается снаружи
         RentalContract(std::uint64_t id, std::string_view clientName, std::uint32_t driverExperience,
-            Vehicle* vehicle, std::uint32_t days, double dailyRate);
+            std::shared_ptr<Vehicle> vehicle, std::uint32_t days, double dailyRate);
 
         RentalContract() = delete;
         RentalContract(const RentalContract&) = delete;
@@ -44,17 +46,17 @@ namespace rental
 
         ~RentalContract();
 
-        [[nodiscard]] std::uint64_t GetId() const
+        [[nodiscard]] std::uint64_t GetId()
         {
             return m_contractId;
         }
 
-        [[nodiscard]] ContractState GetState() const
+        [[nodiscard]] ContractState GetState()
         {
             return m_state;
         }
 
-        [[nodiscard]] double GetTotalCost() const
+        [[nodiscard]] double GetTotalCost()
         {
             return m_totalCost;
         }

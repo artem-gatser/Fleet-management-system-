@@ -1,10 +1,9 @@
 #pragma once
-
 #include "maintenance_record.hpp"
 #include <cstdint>
 #include <string>
 #include <string_view>
-#include <vector>
+#include <memory>
 
 namespace rental
 {
@@ -20,23 +19,26 @@ namespace rental
         double m_batteryLevel{ 100.0 }; // Уровень заряда или топлива в процентах
         double m_mileage{ 0.0 };        // Пробег автомобиля
 
-        // Динамический массив (указатель, выделяемый через new)
-        MaintenanceRecord** m_maintenanceHistory{ nullptr };
-        std::size_t m_maintenanceCapacity{ 0 };             // Вместимость массива
+        // Замена массива MaintenanceRecord** на массив умных указателей (композиция)
+        std::unique_ptr<MaintenanceRecord> m_maintenanceHistory[10];
         std::size_t m_maintenanceCount{ 0 };              // Текущее количество записей
 
     public:
         Vehicle(std::uint64_t id, std::string_view model, double batteryLevel, double mileage);
 
+        // Запрет на создание объектов без параметров
         Vehicle() = delete;
+
+        // Запрет копирования
         Vehicle(const Vehicle&) = delete;
         Vehicle& operator=(const Vehicle&) = delete;
 
-        // Объявление операций перемещения
-        Vehicle(Vehicle&&) noexcept;
-        Vehicle& operator=(Vehicle&&) noexcept;
+        // Операции перемещения генерируются компилятором автоматически (благодаря unique_ptr)
+        Vehicle(Vehicle&&) = default;
+        Vehicle& operator=(Vehicle&&) = default;
 
-        ~Vehicle();
+        // Деструктор больше не нужен, unique_ptr очистят память автоматически
+        ~Vehicle() = default;
 
         [[nodiscard]] std::uint64_t GetId() const
         {
@@ -62,7 +64,7 @@ namespace rental
         void AddMaintenanceRecord(std::uint64_t id, std::string_view description, double cost, std::int64_t timestamp);
 
         // Метод проверки: можно ли арендовать машину (заряд >= 20%)
-        [[nodiscard]] bool CanBeRented() const;
+        [[nodiscard]] bool CanBeRented();
     };
 
 } // namespace rental
