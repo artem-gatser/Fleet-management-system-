@@ -1,5 +1,5 @@
 #pragma once
-#include "vehicle.hpp"
+#include "BaseVehicle.hpp"
 #include <cstdint>
 #include <string>
 #include <string_view>

@@ -1,5 +1,5 @@
 #pragma once
-#include "vehicle.hpp"
+#include "BaseVehicle.hpp"
 
 namespace rental
 {
