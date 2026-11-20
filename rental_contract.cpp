@@ -6,7 +6,7 @@ namespace rental
 
     // Конструктор договора аренды (принимает shared_ptr, сохраняет как weak_ptr)
     RentalContract::RentalContract(std::uint64_t id, std::string_view clientName, std::uint32_t driverExperience,
-        std::shared_ptr<Vehicle> vehicle, std::uint32_t days, double dailyRate)
+        std::shared_ptr<BaseVehicle> vehicle, std::uint32_t days, double dailyRate)
         : m_contractId{ id }
         , m_clientName{ clientName }
         , m_driverExperienceYears{ driverExperience }

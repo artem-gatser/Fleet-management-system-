@@ -1,5 +1,5 @@
 #pragma once
-#include "vehicle.hpp"
+#include "BaseVehicle.hpp"
 #include <cstdint>
 #include <string>
 #include <string_view>
@@ -30,12 +30,12 @@ namespace rental
         ContractState m_state{ ContractState::eActive };
 
         // АГРЕГАЦИЯ: Наблюдатель за автомобилем через std::weak_ptr
-        std::weak_ptr<Vehicle> m_targetVehicle{};
+        std::weak_ptr<BaseVehicle> m_targetVehicle{};
 
     public:
         // Конструктор принимает shared_ptr на автомобиль, который передается снаружи
         RentalContract(std::uint64_t id, std::string_view clientName, std::uint32_t driverExperience,
-            std::shared_ptr<Vehicle> vehicle, std::uint32_t days, double dailyRate);
+            std::shared_ptr<BaseVehicle> vehicle, std::uint32_t days, double dailyRate);
 
         RentalContract() = delete;
         RentalContract(const RentalContract&) = delete;
