@@ -1,124 +1,110 @@
 using System;
+using static System.Console;
+using GeoCoord = Rental.GeoPoint;
+using LogStream = Rental.IssueLog;
+
 namespace Rental
-
 {
-
-    class Program
-
+    internal static class Program
     {
-
-
-        // Создает временный объект автомобиля внутри метода и возвращает слабую ссылку на него.
-        static WeakReference CreateTemporaryCarWatcher()
+        // Создаёт временный объект автомобиля внутри метода и возвращает слабую ссылку на него.
+        private static WeakReference CreateTemporaryCarWatcher()
         {
-            var tempCar = new Vehicle(999, "Списанный автобус", 0.0, 300000.0);
+            var tempCar = new Car(999, "Списанный седан", 0.0, 300000.0, 4);
             return new WeakReference(tempCar);
         }
 
-
-
-        static void Main(string[] args)
-
+        private static void Main(string[] args)
         {
-
             // Поддержка кириллицы в консоли
+            OutputEncoding = System.Text.Encoding.UTF8;
 
-            Console.OutputEncoding = System.Text.Encoding.UTF8;
+            // Абстрактный класс BaseVehicle, два наследника (Car и Truck), : base(...), this, статика
+            WriteLine("ИЕРАРХИЯ, КОНСТРУКТОРЫ И СТАТИКА");
+            BaseVehicle car = new Car(101, "Tesla Model 3", 85.0, 15000.0, 5);
+            BaseVehicle truck = new Truck(201, "Volvo FH Electric", 45.0, 42000.0, 18.5);
+            BaseVehicle lowBatteryTruck = new Truck(202, "MAN eTGM", 15.0, 60000.0, 12.0);
 
+            car.AddMaintenanceRecord(1, "Проверка батареи", 250.0, 1728000000);
+            truck.AddMaintenanceRecord(2, "Диагностика тормозной системы", 600.0, 1728500000);
 
+            WriteLine($"Следующий порядковый номер по статическому методу: {BaseVehicle.NextVehicleSequenceNumber()}");
 
-            Console.WriteLine("СТАРТ ТЕСТИРОВАНИЯ\n");
+            // Переопределение без вызова базы (CanBeRented) и с вызовом базы (ToString -> base.ToString())
+            WriteLine("\nПЕРЕОПРЕДЕЛЕНИЕ МЕТОДОВ И SEALED");
+            WriteLine($"Car: {car}");
+            WriteLine($"Car доступен для аренды? {car.CanBeRented()}");
 
+            WriteLine($"Truck: {truck}");
+            WriteLine($"Truck доступен для аренды? {truck.CanBeRented()}");
 
+            WriteLine($"LowBatteryTruck: {lowBatteryTruck}");
+            WriteLine($"LowBatteryTruck доступен для аренды? {lowBatteryTruck.CanBeRented()}");
 
-            // Создание автомобиля и композиция
-
-            var myCar = new Vehicle(101, "Tesla Model 3", 85.0, 15000.0);
-
-            myCar.AddMaintenanceRecord(1, "Проверка батареи", 250.0, 1728000000);
-
-
-
-            // Тест 1: Неуспешная аренда (маленький стаж)
-
-            Console.WriteLine("\nТЕСТ 1: Попытка аренды клиентом со стажем 1 год");
-
-            var badContract = new RentalContract(501, "Иван", 1, myCar, 3, 50.0);
-
+            // Проверка аренды через RentalContract
+            WriteLine("\nОФОРМЛЕНИЕ АРЕНДЫ (RentalContract)");
+            var badContract = new RentalContract(501, "Иван", 1, car, 3, 50.0);
             badContract.ProcessIssue();
 
-
-
-            // Тест 2: Успешная аренда
-
-            Console.WriteLine("\nТЕСТ 2: Успешная аренда клиентом со стажем 5 лет");
-
-            var goodContract = new RentalContract(502, "Алексей", 5, myCar, 5, 50.0);
-
+            var goodContract = new RentalContract(502, "Алексей", 5, car, 5, 50.0);
             if (goodContract.ProcessIssue())
-
             {
-
                 goodContract.CompleteContract();
-
             }
 
+            // Поверхностная копия (MemberwiseClone) и глубокая копия (конструктор копирования)
+            WriteLine("\nПОВЕРХНОСТНАЯ И ГЛУБОКАЯ КОПИЯ");
+            var originalCar = new Car(103, "Hyundai Ioniq 5", 80.0, 12000.0, 5);
+            originalCar.AddMaintenanceRecord(10, "Плановый осмотр", 150.0, 1729000000);
 
+            Car shallowCopy = originalCar.ShallowCopy();
+            Car deepCopy = originalCar.DeepCopy();
 
-            // Демонстрация памяти: Ссылки и копии
+            WriteLine($"До добавления новой записи ТО -> оригинал: {originalCar.GetMaintenanceCount()}, " +
+                      $"поверхностная копия: {shallowCopy.GetMaintenanceCount()}, " +
+                      $"глубокая копия: {deepCopy.GetMaintenanceCount()}");
 
-            Console.WriteLine("\nДЕМОНСТРАЦИЯ ПАМЯТИ: Ссылки и копии");
+            // В ShallowCopy массив _maintenanceHistory общий с оригиналом, поэтому счётчик записей ТО меняется у обоих
+            originalCar.AddMaintenanceRecord(11, "Замена тормозных колодок", 300.0, 1730000000);
 
-            var firstVehicle = new Vehicle(102, "Nissan Leaf", 90.0, 5000.0);
+            WriteLine($"После добавления записи ТО в оригинал -> оригинал: {originalCar.GetMaintenanceCount()}, " +
+                      $"поверхностная копия: {shallowCopy.GetMaintenanceCount()}, " +
+                      $"глубокая копия: {deepCopy.GetMaintenanceCount()}");
 
-            var secondVehicle = firstVehicle;
+            // Сравнение объектов по содержимому (Equals и GetHashCode по Id)
+            WriteLine("\nСРАВНЕНИЕ ОБЪЕКТОВ ПО СОДЕРЖИМОМУ (Equals / GetHashCode)");
+            BaseVehicle sameIdCar = new Car(103, "Другое название модели", 10.0, 99999.0, 2);
+            BaseVehicle differentIdCar = new Car(104, "Kia EV6", 80.0, 12000.0, 5);
 
-            Console.WriteLine($"firstVehicle == secondVehicle: {firstVehicle == secondVehicle}");
+            WriteLine($"Ссылка (==) originalCar и sameIdCar: {originalCar == sameIdCar}");
+            WriteLine($"Содержимое (Equals по Id) originalCar и sameIdCar: {originalCar.Equals(sameIdCar)}");
+            WriteLine($"Хэш-коды совпадают (Id = 103)? {originalCar.GetHashCode() == sameIdCar.GetHashCode()} " +
+                      $"({originalCar.GetHashCode()} vs {sameIdCar.GetHashCode()})");
+            WriteLine($"Содержимое (Equals по Id) originalCar и differentIdCar: {originalCar.Equals(differentIdCar)}");
 
+            // Значимый тип (struct) vs ссылочный тип (class)
+            WriteLine("\nЗНАЧИМЫЙ ТИП (struct)");
+            var startPoint = new GeoCoord { Latitude = 53.3498, Longitude = 83.7836 };
+            var currentPoint = startPoint;
+            currentPoint.Latitude = 55.7558;
+            WriteLine($"startPoint.Latitude: {startPoint.Latitude}, currentPoint.Latitude: {currentPoint.Latitude}");
 
-
-            // Демонстрация отличия struct от class на примере координат автомобиля
-            Console.WriteLine("\nДЕМОНСТРАЦИЯ ПАМЯТИ: Значимый тип (struct) на примере координат");
-            var startPoint = new GeoPoint { Latitude = 53.3498, Longitude = 83.7836 };
-            var currentPoint = startPoint; // Создается полная независимая копия в памяти
-
-            currentPoint.Latitude = 55.7558; // Изменяем координаты только для текущей точки
-
-            Console.WriteLine($"Начальная широта (startPoint): {startPoint.Latitude} (не изменилась)");
-            Console.WriteLine($"Текущая широта (currentPoint): {currentPoint.Latitude}");
-
-
-
-            // Демонстрация освобождения ресурса через IDisposable и using
-
-            Console.WriteLine("\nДЕМОНСТРАЦИЯ: Освобождение ресурса (using)");
-
-            using (var log = new IssueLog("Абонемент проката"))
-
+            // Освобождение ресурса через using var + сборщик мусора
+            WriteLine("\nUSING VAR И СБОРЩИК МУСОРА");
+            using (var log = new LogStream("Абонемент проката"))
             {
-
-                log.Write("выдан автомобиль Tesla Model 3");
-
+                log.Write($"Выдан автомобиль: {car}");
             }
 
-
-
-            // Демонстрация сборщика мусора через WeakReference
-            Console.WriteLine("\nДЕМОНСТРАЦИЯ: Сборщик мусора (Garbage Collector)");
             var watcher = CreateTemporaryCarWatcher();
-            Console.WriteLine($"Автомобиль жив до сборки мусора? {watcher.IsAlive}");
+            WriteLine($"Временный автомобиль жив до GC.Collect()? {watcher.IsAlive}");
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            WriteLine($"Временный автомобиль жив после GC.Collect()? {watcher.IsAlive}");
 
-            GC.Collect(); // Принудительный сбор мусора
-            GC.WaitForPendingFinalizers(); // Ожидание завершения очистки
-            Console.WriteLine($"Автомобиль жив после GC.Collect()? {watcher.IsAlive}");
-
-
-            Console.WriteLine("\nТЕСТИРОВАНИЕ ЗАВЕРШЕНО");
-
+            WriteLine("\nДЕМОНСТРАЦИЯ ЗАВЕРШЕНА");
         }
-
     }
-
 
     // Структура для географических координат автомобиля (значимый тип)
     public struct GeoPoint
@@ -126,5 +112,4 @@ namespace Rental
         public double Latitude;
         public double Longitude;
     }
-
 }
